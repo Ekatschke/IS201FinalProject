@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle Game</title>
+  This is my web page
+    <a href="../index.html">Professional Page</a>
+    <br>
+    <br>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f2f2f2;
+      padding: 50px;
+    }
+    h1 {
+      color: #333;
+    }
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(5, 50px);
+      grid-gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .cell {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ddd;
+      border: 1px solid #ccc;
+    }
+    .cell.correct {
+      background-color: #6aaa64; /* Green */
+    }
+    .cell.present {
+      background-color: #c9b458; /* Yellow */
+    }
+    .cell.absent {
+      background-color: #787c7e; /* Gray */
+    }
+    input {
+      width: 50px;
+      height: 50px;
+      text-align: center;
+      font-size: 20px;
+      margin-right: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .keyboard {
+      display: grid;
+      grid-template-columns: repeat(10, 50px);
+      gap: 5px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .key {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ddd;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .key:active {
+      background-color: #b0b0b0;
+    }
+    .restart-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #ff5733;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .restart-button:hover {
+      background-color: #e04e2d;
+    }
+  </style>
+</head>
+<body>
+  <h1>Wordle Game</h1>
+  <div id="game-status"></div>
+  <div class="game-board" id="game-board"></div>
+  <div>
+    <input type="text" id="guess-input" maxlength="5" />
+    <button onclick="submitGuess()">Submit Guess</button>
+  </div>
+  <div class="keyboard" id="keyboard"></div>
+  <button class="restart-button" onclick="startNewGame()" style="display:none;">Restart Game</button>
+
+  <script>
+    const words = ['apple', 'grape', 'peach', 'mango', 'melon'];
+    let targetWord;
+    let attempts;
+    const maxAttempts = 6;
+
+    function initializeGameBoard() {
+      const gameBoard = document.getElementById('game-board');
+      gameBoard.innerHTML = '';
+      for (let i = 0; i < maxAttempts; i++) {
+        for (let j = 0; j < 5; j++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+          gameBoard.appendChild(cell);
+        }
+      }
+    }
+
+    function submitGuess() {
+      const guessInput = document.getElementById('guess-input');
+      let guess = guessInput.value.toLowerCase();
+      if (guess.length !== 5 || !/^[a-z]+$/.test(guess)) {
+        alert("Please enter a valid 5-letter word.");
+        return;
+      }
+
+      if (attempts < maxAttempts) {
+        giveFeedback(guess);
+        attempts++;
+        if (guess === targetWord) {
+          document.getElementById('game-status').textContent = "Congratulations! You guessed the word!";
+          document.querySelector('.restart-button').style.display = "block";
+        } else if (attempts === maxAttempts) {
+          document.getElementById('game-status').textContent = `Game Over! The word was ${targetWord}.`;
+          document.querySelector('.restart-button').style.display = "block";
+        }
+        guessInput.value = '';
+      }
+    }
+
+    function giveFeedback(guess) {
+      const gameBoard = document.getElementById('game-board');
+      const cells = gameBoard.getElementsByClassName('cell');
+      const guessArray = guess.split('');
+
+      let feedback = ['absent', 'absent', 'absent', 'absent', 'absent'];
+
+      // First pass: Check for correct letters in correct positions (green)
+      for (let i = 0; i < 5; i++) {
+        if (guessArray[i] === targetWord[i]) {
+          feedback[i] = 'correct';
+        }
+      }
+
+      // Second pass: Check for correct letters in wrong positions (yellow)
+      for (let i = 0; i < 5; i++) {
+        if (feedback[i] !== 'correct' && targetWord.includes(guessArray[i])) {
+          feedback[i] = 'present';
+        }
+      }
+
+      // Update the cells with feedback
+      for (let i = 0; i < 5; i++) {
+        const index = attempts * 5 + i;
+        cells[index].textContent = guessArray[i].toUpperCase();
+        cells[index].classList.add(feedback[i]);
+      }
+    }
+
+    // Initialize the keyboard
+    function initializeKeyboard() {
+      const keyboard = document.getElementById('keyboard');
+      const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+      alphabet.forEach(letter => {
+        const key = document.createElement('div');
+        key.classList.add('key');
+        key.textContent = letter.toUpperCase();
+        key.onclick = () => handleKeyClick(letter);
+        keyboard.appendChild(key);
+      });
+    }
+
+    function handleKeyClick(letter) {
+      const guessInput = document.getElementById('guess-input');
+      if (guessInput.value.length < 5) {
+        guessInput.value += letter;
+      }
+    }
+
+    // Start a new game
+    function startNewGame() {
+      targetWord = words[Math.floor(Math.random() * words.length)];
+      attempts = 0;
+      document.getElementById('game-status').textContent = '';
+      document.querySelector('.restart-button').style.display = 'none';
+      initializeGameBoard();
+      document.getElementById('guess-input').value = '';
+    }
+
+    // Initialize the game
+    function initializeGame() {
+      startNewGame();
+      initializeKeyboard();
+    }
+
+    // Initialize the game when the page loads
+    window.onload = initializeGame;
+  </script>
+</body>
+</html>
